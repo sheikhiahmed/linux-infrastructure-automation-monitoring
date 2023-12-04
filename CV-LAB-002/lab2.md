@@ -1,0 +1,202 @@
+# FameTech DevOps Lab – Filesystem, Logs, Archives & Storage Management
+
+> This lab simulates real-world DevOps responsibilities involving directory structuring, secure log handling, permission hardening, and Linux storage management — critical for supporting CI/CD, monitoring agents, and backup strategies in production.
+
+---
+
+## About This Project
+
+This hands-on lab was executed as part of my DevOps role at FameTech NYC, simulating work for CloudVerse Corp. I was responsible for provisioning secure log directories for Jenkins and automation tools, managing storage mounts, enforcing group-based access policies, and automating archiving and recovery tasks.
+
+> Verified experience through project-based simulation at FameTech.
+
+---
+
+## Lab Metadata
+
+| Key          | Value                                                                        |
+| ------------ | ---------------------------------------------------------------------------- |
+| Lab Title    | Filesystem, Logs, Archives & Storage Management                              |
+| Lab ID       | CV-LAB-002                                                                   |
+| Company      | CloudVerse Corp                                                              |
+| Engineer     | Sheikh Ahmed                                                                 |
+| Sprint       | Sprint 4                                                                     |
+| Environments | CentOS 7, Ubuntu 22.04                                                       |
+| Tools Used   | mkdir, chown, chmod, tar, zip, mount, fstab, blkid, df, lsblk, find, losetup |
+
+---
+
+## Ticket: CV-DEVOPS-101
+
+As part of CloudVerse’s CI/CD infrastructure hardening effort, you’ve been assigned to:
+
+- Create secure directories under `/opt` and `/var/log`
+- Apply user/group-based ownership and permission controls
+- Archive logs with tar and zip, then simulate recovery
+- Simulate block storage and mount it persistently using `/etc/fstab`
+
+---
+
+## Requirements
+
+| Item           | Details                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| Directories    | /opt/cloudverse/{jenkins,ansible,monitoring} and /var/log/cloudverse/{jenkins,ansible,monitoring} |
+| Ownership      | jenkins:devops, ansible:devops, root:devops                                                       |
+| Permissions    | /opt → 750, /var/log → 770                                                                        |
+| Archive Format | .tar.gz and .zip                                                                                  |
+| Storage        | Simulated 1GB loopback device, mounted at /mnt/devopsdata                                         |
+
+---
+
+## Implementation Steps
+
+### Step 1: Create Secure Directory Structure
+
+```bash
+sudo mkdir -p /opt/cloudverse/{jenkins,ansible,monitoring}
+sudo mkdir -p /var/log/cloudverse/{jenkins,ansible,monitoring}
+```
+
+---
+
+### Step 2: Apply Ownership and Permissions
+
+```bash
+sudo chown -R jenkins:devops /opt/cloudverse/jenkins /var/log/cloudverse/jenkins
+sudo chown -R ansible:devops /opt/cloudverse/ansible /var/log/cloudverse/ansible
+sudo chown -R root:devops /opt/cloudverse/monitoring /var/log/cloudverse/monitoring
+
+sudo chmod -R 750 /opt/cloudverse/
+sudo chmod -R 770 /var/log/cloudverse/
+```
+
+---
+
+### Step 3: Simulate Log Generation
+
+```bash
+echo "Build success at $(date)" | sudo tee -a /var/log/cloudverse/jenkins/build.log
+echo "Deployed at $(date)" | sudo tee -a /var/log/cloudverse/ansible/deploy.log
+echo "Heartbeat OK $(date)" | sudo tee -a /var/log/cloudverse/monitoring/agent.log
+```
+
+---
+
+### Step 4: Archive Logs and Simulate Rotation
+
+```bash
+sudo tar -czvf /opt/cloudverse/jenkins_logs_$(date +%F).tar.gz /var/log/cloudverse/jenkins/
+sudo tar -czvf /opt/cloudverse/ansible_logs_$(date +%F).tar.gz /var/log/cloudverse/ansible/
+
+sudo find /var/log/cloudverse/jenkins/ -type f -name "*.log" -delete
+sudo find /var/log/cloudverse/ansible/ -type f -name "*.log" -delete
+```
+
+---
+
+### Step 5: Restore Logs from Archive
+
+```bash
+sudo tar -xzvf /opt/cloudverse/jenkins_logs_*.tar.gz -C /var/log/cloudverse/
+sudo tar -xzvf /opt/cloudverse/ansible_logs_*.tar.gz -C /var/log/cloudverse/
+```
+
+---
+
+### Step 6: Simulate Block Storage with Loop Device
+
+```bash
+sudo dd if=/dev/zero of=/fake-disk.img bs=1M count=1024
+sudo losetup /dev/loop10 /fake-disk.img
+sudo mkfs.ext4 /dev/loop10
+sudo mkdir /mnt/devopsdata
+sudo mount /dev/loop10 /mnt/devopsdata
+df -h | grep devopsdata
+```
+
+---
+
+### Step 7: Make Mount Persistent with /etc/fstab
+
+```bash
+sudo blkid /dev/loop10
+```
+
+Edit `/etc/fstab`:
+
+```
+UUID=<copied-uuid> /mnt/devopsdata ext4 defaults,nofail 0 0
+```
+
+Then run:
+
+```bash
+sudo mount -a
+```
+
+---
+
+## Validation Checklist
+
+| Task                                                | Status   |
+| --------------------------------------------------- | -------- |
+| Directory structure created under /opt and /var/log | Complete |
+| Permissions and ownership set correctly             | Complete |
+| Logs generated, archived, and restored              | Complete |
+| Simulated storage mounted and made persistent       | Complete |
+| UUID correctly added to /etc/fstab                  | Complete |
+
+---
+
+## Screenshots
+
+Please capture and include:
+
+- `ls -l` showing permission structure  
+  ![permission structure](/screenshots/permission%20structure.png)
+- `df -h` showing mounted loop device  
+  ![showing mounted loop](/screenshots/mounted%20loop.png)
+- Archive files under `/opt/cloudverse/`  
+  ![Archive files](/screenshots/archiving%20files.png)
+- Extracted logs under `/var/log/cloudverse/`  
+  ![Extracted logs](/screenshots/extracted%20logs.png)
+
+---
+
+## Interview Questions and Answers
+
+| Question                                                      | Answer                                                                |
+| ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| How do you secure log directories in multi-user environments? | Use user\:group ownership and restrict access with chmod 750 or 770   |
+| What’s the purpose of /etc/fstab in Linux?                    | It enables persistent mounting of storage devices after reboot        |
+| Why simulate storage with loop devices?                       | For testing without physical disks, common in lab and staging setups  |
+| How would you implement log rotation?                         | Use `logrotate` or manual archiving and cleanup with `tar` and `find` |
+| What’s the risk of using chmod 777 on logs?                   | Full access to all users, violating security and compliance standards |
+
+---
+
+## Real-World Use Cases
+
+- Jenkins job logs must be retained securely to prevent leakage of build secrets
+- Monitoring logs are critical for real-time alerting and compliance audits
+- Log archiving helps retain space and enable rollback/debug in prod environments
+- Persistent storage for CI/CD agents or containers ensures data isn't lost on reboot
+
+---
+
+## Common Mistakes
+
+| Mistake                                            | Resolution                                   |
+| -------------------------------------------------- | -------------------------------------------- |
+| Editing /etc/fstab but not testing with `mount -a` | Always test the entry before reboot          |
+| Assigning wrong permissions like 777               | Use least-privilege model: 750 or 770        |
+| Forgetting to create mount directory               | Always `mkdir` target directory before mount |
+
+---
+
+## Story: From Task to Production Impact
+
+In real-world DevOps, careless log handling or missing mount entries can lead to security breaches, system crashes, and failed audits. In this lab, I acted as the DevOps engineer responsible for enforcing security through structured filesystem controls and reliable storage provisioning — essential practices before scaling to production-grade infrastructure.
+
+---
