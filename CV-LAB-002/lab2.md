@@ -151,16 +151,16 @@ sudo mount -a
 
 ## Screenshots
 
-Please capture and include:
+Screenshots included under the /screenshots directory:
 
 - `ls -l` showing permission structure  
-  ![permission structure](/screenshots/permission%20structure.png)
+  ![permission_structure](screenshots/permission%20structure.png)
 - `df -h` showing mounted loop device  
-  ![showing mounted loop](/screenshots/mounted%20loop.png)
+  ![showing_mounted_loop](screenshots/mounted%20loop.png)
 - Archive files under `/opt/cloudverse/`  
-  ![Archive files](/screenshots/archiving%20files.png)
+  ![Archive_files](screenshots/archiving%20files.png)
 - Extracted logs under `/var/log/cloudverse/`  
-  ![Extracted logs](/screenshots/extracted%20logs.png)
+  ![Extracted_logs](screenshots/extracted%20logs.png)
 
 ---
 
